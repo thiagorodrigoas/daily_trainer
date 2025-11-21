@@ -15,16 +15,27 @@
     <table class="table table-striped table-hover align-middle">
         <thead class="table-dark">
             <tr>
+                <th style="width: 40px;"></th>
                 <th>ID</th>
                 <th>Data</th>
                 <th>Aluno</th>
                 <th>Observações</th>
-                <th style="width: 130px;">Ações</th>
+                <th style="width: 240px;">Ações</th>
             </tr>
         </thead>
         <tbody>
         {% for t in treinos %}
-            <tr>
+            <tr
+              class="treino-row"
+              role="button"
+              data-bs-toggle="collapse"
+              data-bs-target="#treino-exs-{{ t.id }}"
+              aria-expanded="false"
+              aria-controls="treino-exs-{{ t.id }}"
+            >
+                <td class="text-center align-middle">
+                    <span class="caret-icon" data-collapse-icon="{{ t.id }}">&#9656;</span>
+                </td>
                 <td>{{ t.id }}</td>
                 <td>{{ t.data }}</td>
                 <td>{{ t.aluno_nome }} (ID {{ t.aluno_id }})</td>
@@ -32,10 +43,18 @@
                     {{ t.observacoes or "-" }}
                 </td>
                 <td>
-                    <div class="d-flex gap-1">
+                    <div class="d-flex flex-wrap gap-1">
+                        <a
+                          href="/web/treinos/{{ t.id }}"
+                          class="btn btn-sm btn-outline-success"
+                          title="Abrir treino para gerenciar exercícios"
+                        >
+                            Abrir
+                        </a>
                         <a
                           href="/web/treinos/{{ t.id }}/editar"
                           class="btn btn-sm btn-outline-primary"
+                          title="Editar data/observações do treino"
                         >
                             Editar
                         </a>
@@ -51,6 +70,45 @@
                     </div>
                 </td>
             </tr>
+            <tr>
+                <td colspan="6" class="p-0 border-0">
+                    <div class="collapse" id="treino-exs-{{ t.id }}">
+                        <div class="p-3">
+                            {% set grupos = exercicios_por_treino.get(t.id, {}) %}
+                            {% if grupos %}
+                                <table class="table table-sm mb-0 align-middle">
+                                    <thead class="table-secondary">
+                                        <tr>
+                                            <th style="width: 180px;">Grupo muscular</th>
+                                            <th>Exercícios</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                    {% for grupo, nomes in grupos.items() %}
+                                        <tr>
+                                            <td class="fw-semibold">{{ grupo }}</td>
+                                            <td>
+                                                <div class="d-flex flex-wrap gap-2">
+                                                    {% for nome in nomes %}
+                                                        <span class="badge bg-primary-subtle text-primary-emphasis border border-primary-subtle">
+                                                            {{ nome }}
+                                                        </span>
+                                                    {% endfor %}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                    </tbody>
+                                </table>
+                            {% else %}
+                                <div class="text-muted small">
+                                    Nenhum exercício cadastrado neste treino.
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </td>
+            </tr>
         {% endfor %}
         </tbody>
     </table>
@@ -61,4 +119,33 @@
     <a href="/web/treinos/novo" class="alert-link">Criar primeiro treino</a>.
 </div>
 {% endif %}
+{% endblock %}
+
+{% block extra_js %}
+{{ super() }}
+<script>
+  // Toggle caret icons on collapse show/hide
+  document.addEventListener('DOMContentLoaded', function () {
+    var collapses = document.querySelectorAll('.table .collapse');
+    collapses.forEach(function (col) {
+      col.addEventListener('show.bs.collapse', function () {
+        var id = col.id.replace('treino-exs-', '');
+        var icon = document.querySelector('[data-collapse-icon="' + id + '"]');
+        if (icon) icon.innerHTML = '&#9662;'; // down caret
+      });
+      col.addEventListener('hide.bs.collapse', function () {
+        var id = col.id.replace('treino-exs-', '');
+        var icon = document.querySelector('[data-collapse-icon="' + id + '"]');
+        if (icon) icon.innerHTML = '&#9656;'; // right caret
+      });
+    });
+
+    // Prevent clicks on action buttons/links from toggling the collapse via the row
+    document.querySelectorAll('.treino-row a, .treino-row button').forEach(function(el) {
+      el.addEventListener('click', function(ev) {
+        ev.stopPropagation();
+      });
+    });
+  });
+</script>
 {% endblock %}

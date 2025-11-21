@@ -204,12 +204,83 @@ def web_listar_treinos(
 
     treinos_view = list_treinos_with_aluno(cursor)
 
+    # Mapeia exercicios agrupados por grupo_muscular para cada treino
+    exercicios_por_treino = {}
+    if treinos_view:
+        treino_ids = [t["id"] for t in treinos_view]
+        placeholders = ",".join(["?"] * len(treino_ids))
+        cursor.execute(
+            f"""
+            SELECT
+                edt.treino_id,
+                COALESCE(NULLIF(TRIM(e.grupo_muscular), ''), 'Sem grupo') AS grupo,
+                e.nome,
+                e.apelido
+            FROM exercicios_do_treino edt
+            JOIN exercicios e ON e.id = edt.exercicio_id
+            WHERE edt.treino_id IN ({placeholders})
+            ORDER BY grupo, e.nome;
+            """,
+            treino_ids,
+        )
+        for treino_id, grupo, nome, apelido in cursor.fetchall():
+            grupos = exercicios_por_treino.setdefault(treino_id, {})
+            display_nome = nome
+            if apelido:
+                display_nome += f" ({apelido})"
+            grupos.setdefault(grupo, []).append(display_nome)
+
     context = {
         "request": request,
             "titulo": "Treinos",
             "treinos": treinos_view,
+            "exercicios_por_treino": exercicios_por_treino,
     }
     return templates.TemplateResponse("treinos/lista.html", context)
+
+@router.get("/treinos/novo", response_class=HTMLResponse)
+def web_novo_treino(
+    request: Request,
+    cursor=Depends(get_db_cursor),
+):
+    """
+    Exibe o formulário para cadastrar um novo treino (sessão do dia).
+    """
+    alunos = list_alunos(cursor)
+
+    context = {
+        "request": request,
+        "titulo": "Novo Treino",
+        "modo": "novo",
+        "treino": None,
+        "alunos": alunos,
+        "action_url": "/web/treinos/novo",
+    }
+    return templates.TemplateResponse("treinos/form.html", context)
+
+@router.post("/treinos/novo")
+def web_criar_treino(
+    request: Request,
+    aluno_id: int = Form(...),
+    data: str = Form(...),
+    observacoes: str = Form(""),
+    cursor=Depends(get_db_cursor),
+):
+    """
+    Recebe o formulário de novo treino e cria via service.
+    """
+
+    data_obj = date.fromisoformat(data)
+
+    treino = Treino(
+        id=None,
+        aluno_id=aluno_id,
+        data=data_obj,
+        observacoes=observacoes or None,
+    )
+
+    create_treino(cursor, treino)
+    return RedirectResponse(url="/web/treinos", status_code=303)
 
 @router.get("/treinos/{treino_id}", response_class=HTMLResponse)
 def web_detalhe_treino(
@@ -323,13 +394,78 @@ def web_adicionar_exercicios_padrao_ao_treino(
         status_code=303,
     )
 
+@router.get("/treinos/{treino_id}/editar", response_class=HTMLResponse)
+def web_editar_treino(
+    request: Request,
+    treino_id: int,
+    cursor=Depends(get_db_cursor),
+):
+    """
+    Exibe o formulário para editar um treino existente.
+    """
+
+    treino = get_treino(cursor, treino_id)
+    if not treino:
+        return RedirectResponse(url="/web/treinos", status_code=303)
+
+    alunos = list_alunos(cursor)
+
+    context = {
+        "request": request,
+        "titulo": f"Editar Treino #{treino.id}",
+        "modo": "editar",
+        "treino": treino,
+        "alunos": alunos,
+        "action_url": f"/web/treinos/{treino.id}/editar",
+    }
+    return templates.TemplateResponse("treinos/form.html", context)
+
+@router.post("/treinos/{treino_id}/editar")
+def web_atualizar_treino(
+    request: Request,
+    treino_id: int,
+    aluno_id: int = Form(...),
+    data: str = Form(...),
+    observacoes: str = Form(""),
+    cursor=Depends(get_db_cursor),
+):
+    """
+    Recebe o formulário de edição e atualiza o treino via service.
+    """
+
+    data_obj = date.fromisoformat(data)
+
+    treino = Treino(
+        id=treino_id,
+        aluno_id=aluno_id,
+        data=data_obj,
+        observacoes=observacoes or None,
+    )
+
+    atualizado = update_treino(cursor, treino_id, treino)
+    if not atualizado:
+        return RedirectResponse(url="/web/treinos", status_code=303)
+
+    return RedirectResponse(url="/web/treinos", status_code=303)
+
+@router.post("/treinos/{treino_id}/deletar")
+def web_deletar_treino(
+    treino_id: int,
+    cursor=Depends(get_db_cursor),
+):
+    """
+    Exclui o treino e seus exercícios vinculados.
+    """
+    delete_treino(cursor, treino_id)
+    return RedirectResponse(url="/web/treinos", status_code=303)
+
 @router.post("/treinos/{treino_id}/exercicios/adicionar")
 def web_adicionar_exercicio_ao_treino(
     treino_id: int,
     exercicio_id: int = Form(...),
     series: int = Form(...),
     repeticoes: int = Form(...),
-    carga: float = Form(None),
+    carga: str = Form(""),
     observacoes: str = Form(""),
     cursor=Depends(get_db_cursor),
 ):
@@ -337,13 +473,15 @@ def web_adicionar_exercicio_ao_treino(
     Adiciona um exercício específico do catálogo ao treino.
     """
 
+    carga_val = float(carga) if carga else None
+
     exercicio_treino = ExercicioDoTreino(
         id=None,
         treino_id=treino_id,
         exercicio_id=exercicio_id,
         series=series,
         repeticoes=repeticoes,
-        carga=carga,
+        carga=carga_val,
         observacoes=observacoes or None,
     )
 
@@ -413,13 +551,15 @@ def web_atualizar_exercicio_do_treino(
     exercicio_treino_id: int,
     series: int = Form(...),
     repeticoes: int = Form(...),
-    carga: float = Form(None),
+    carga: str = Form(""),
     observacoes: str = Form(""),
     cursor=Depends(get_db_cursor),
 ):
     """
     Atualiza séries, repetições, carga e observações de um exercício do treino.
     """
+
+    carga_val = float(carga) if carga else None
 
     # Obter exercicio_id atual
     cursor.execute(
@@ -442,7 +582,7 @@ def web_atualizar_exercicio_do_treino(
         exercicio_id=exercicio_id,
         series=series,
         repeticoes=repeticoes,
-        carga=carga,
+        carga=carga_val,
         observacoes=observacoes or None,
     )
 
@@ -503,115 +643,6 @@ def web_deletar_exercicio_do_treino(
         url=f"/web/treinos/{treino_id}",
         status_code=303,
     )
-
-@router.get("/treinos/novo", response_class=HTMLResponse)
-def web_novo_treino(
-    request: Request,
-    cursor=Depends(get_db_cursor),
-):
-    """
-    Exibe o formulário para cadastrar um novo treino (sessão do dia).
-    """
-    alunos = list_alunos(cursor)
-
-    context = {
-        "request": request,
-        "titulo": "Novo Treino",
-        "modo": "novo",
-        "treino": None,
-        "alunos": alunos,
-        "action_url": "/web/treinos/novo",
-    }
-    return templates.TemplateResponse("treinos/form.html", context)
-
-@router.post("/treinos/novo")
-def web_criar_treino(
-    request: Request,
-    aluno_id: int = Form(...),
-    data: str = Form(...),
-    observacoes: str = Form(""),
-    cursor=Depends(get_db_cursor),
-):
-    """
-    Recebe o formulário de novo treino e cria via service.
-    """
-
-    data_obj = date.fromisoformat(data)
-
-    treino = Treino(
-        id=None,
-        aluno_id=aluno_id,
-        data=data_obj,
-        observacoes=observacoes or None,
-    )
-
-    create_treino(cursor, treino)
-    return RedirectResponse(url="/web/treinos", status_code=303)
-
-@router.get("/treinos/{treino_id}/editar", response_class=HTMLResponse)
-def web_editar_treino(
-    request: Request,
-    treino_id: int,
-    cursor=Depends(get_db_cursor),
-):
-    """
-    Exibe o formulário para editar um treino existente.
-    """
-
-    treino = get_treino(cursor, treino_id)
-    if not treino:
-        return RedirectResponse(url="/web/treinos", status_code=303)
-
-    alunos = list_alunos(cursor)
-
-    context = {
-        "request": request,
-        "titulo": f"Editar Treino #{treino.id}",
-        "modo": "editar",
-        "treino": treino,
-        "alunos": alunos,
-        "action_url": f"/web/treinos/{treino.id}/editar",
-    }
-    return templates.TemplateResponse("treinos/form.html", context)
-
-@router.post("/treinos/{treino_id}/editar")
-def web_atualizar_treino(
-    request: Request,
-    treino_id: int,
-    aluno_id: int = Form(...),
-    data: str = Form(...),
-    observacoes: str = Form(""),
-    cursor=Depends(get_db_cursor),
-):
-    """
-    Recebe o formulário de edição e atualiza o treino via service.
-    """
-
-    data_obj = date.fromisoformat(data)
-
-    treino = Treino(
-        id=treino_id,
-        aluno_id=aluno_id,
-        data=data_obj,
-        observacoes=observacoes or None,
-    )
-
-    atualizado = update_treino(cursor, treino_id, treino)
-    if not atualizado:
-        return RedirectResponse(url="/web/treinos", status_code=303)
-
-    return RedirectResponse(url="/web/treinos", status_code=303)
-
-@router.post("/treinos/{treino_id}/deletar")
-def web_deletar_treino(
-    treino_id: int,
-    cursor=Depends(get_db_cursor),
-):
-    """
-    Exclui o treino e seus exercícios vinculados.
-    """
-    delete_treino(cursor, treino_id)
-    return RedirectResponse(url="/web/treinos", status_code=303)
 
 
 # ---------- EXERCÍCIOS ----------

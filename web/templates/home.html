@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}{{ titulo or "Daily Trainer - Web" }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12 mb-4">
+        <h1 class="h3">Daily Trainer - Painel Web</h1>
+        <p class="text-muted">
+            Visualize e gerencie alunos, treinos e exercícios usando a mesma base da API v2.
+        </p>
+    </div>
+
+    <div class="col-md-4 mb-3">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title">Alunos</h5>
+                <p class="card-text">
+                    Veja a lista de alunos cadastrados e seus dados básicos.
+                </p>
+                <a href="/web/alunos" class="btn btn-primary btn-sm">Ir para Alunos</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4 mb-3">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title">Treinos</h5>
+                <p class="card-text">
+                    Consulte os treinos (sessões do dia) vinculados aos alunos.
+                </p>
+                <a href="/web/treinos" class="btn btn-primary btn-sm">Ir para Treinos</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4 mb-3">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title">Exercícios</h5>
+                <p class="card-text">
+                    Gerencie o catálogo de exercícios e padrões por grupo muscular.
+                </p>
+                <a href="/web/exercicios" class="btn btn-primary btn-sm">Ir para Exercícios</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}
+    {% if modo == "editar" %}
+        Editar Treino - Daily Trainer
+    {% else %}
+        Novo Treino - Daily Trainer
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 col-lg-6">
+        <h1 class="h4 mb-3">
+            {% if modo == "editar" %}
+                Editar Treino
+            {% else %}
+                Novo Treino
+            {% endif %}
+        </h1>
+
+        <form method="post" action="{{ action_url }}">
+            <div class="mb-3">
+                <label for="aluno_id" class="form-label">Aluno</label>
+                <select
+                    class="form-select"
+                    id="aluno_id"
+                    name="aluno_id"
+                    required
+                >
+                    <option value="" disabled {% if not treino %}selected{% endif %}>
+                        Selecione um aluno
+                    </option>
+                    {% for aluno in alunos %}
+                        <option value="{{ aluno.id }}"
+                            {% if treino and aluno.id == treino.aluno_id %}selected{% endif %}
+                        >
+                            {{ aluno.nome }} (ID {{ aluno.id }})
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label for="data" class="form-label">Data do Treino</label>
+                <input
+                    type="date"
+                    class="form-control"
+                    id="data"
+                    name="data"
+                    required
+                    value="{% if treino %}{{ treino.data }}{% endif %}"
+                >
+            </div>
+
+            <div class="mb-3">
+                <label for="observacoes" class="form-label">Observações</label>
+                <textarea
+                    class="form-control"
+                    id="observacoes"
+                    name="observacoes"
+                    rows="3"
+                    placeholder="Ex: treino focado em bíceps e costas, foco em técnica..."
+                >{% if treino and treino.observacoes %}{{ treino.observacoes }}{% endif %}</textarea>
+            </div>
+
+            <div class="d-flex justify-content-between">
+                <a href="/web/treinos" class="btn btn-secondary">
+                    Voltar
+                </a>
+
+                <button type="submit" class="btn btn-primary">
+                    {% if modo == "editar" %}Salvar alterações{% else %}Criar treino{% endif %}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

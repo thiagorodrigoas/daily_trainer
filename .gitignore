@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Envs
+.env
+venv/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+
+# DuckDB file
+*.duckdb
+*.duckdb.wal
+
+# Cache / build
+dist/
+build/
+*.log

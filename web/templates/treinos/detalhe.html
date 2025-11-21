@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+
+{% block title %}Treino #{{ treino.id }} - Daily Trainer{% endblock %}
+
+{% block content %}
+<div class="mb-3">
+    <a href="/web/treinos" class="btn btn-sm btn-secondary">&larr; Voltar para lista de treinos</a>
+</div>
+
+<div class="row">
+    <div class="col-lg-5 mb-3">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h2 class="h5">Treino #{{ treino.id }}</h2>
+                <p class="mb-1"><strong>Aluno:</strong> {{ treino.aluno_nome }} (ID {{ treino.aluno_id }})</p>
+                <p class="mb-1"><strong>Data:</strong> {{ treino.data }}</p>
+                <p class="mb-0"><strong>Observações:</strong> {{ treino.observacoes or "-" }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-7 mb-3">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h3 class="h6">Adicionar exercícios padrão</h3>
+                <form class="row g-2"
+                      method="post"
+                      action="/web/treinos/{{ treino.id }}/exercicios/adicionar_padrao">
+                    <div class="col-md-6">
+                        <input
+                            type="text"
+                            name="grupo_muscular"
+                            class="form-control"
+                            placeholder="Grupo muscular (ex.: bíceps)"
+                            required
+                        >
+                    </div>
+                    <div class="col-md-4">
+                        <select name="perfil" class="form-select">
+                            {% for p in perfis %}
+                                <option value="{{ p }}">{{ p|capitalize }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2 d-grid">
+                        <button type="submit" class="btn btn-outline-primary btn-sm">
+                            Adicionar
+                        </button>
+                    </div>
+                </form>
+
+                <hr>
+
+                <h3 class="h6">Adicionar exercício do catálogo</h3>
+                <form class="row g-2"
+                      method="post"
+                      action="/web/treinos/{{ treino.id }}/exercicios/adicionar">
+                    <div class="col-md-5">
+                        <select name="exercicio_id" class="form-select" required>
+                            <option value="" disabled selected>Selecione um exercício</option>
+                            {% for ex in exercicios_catalogo %}
+                                <option value="{{ ex.id }}">
+                                    {{ ex.nome }}{% if ex.apelido %} ({{ ex.apelido }}){% endif %} - {{ ex.grupo_muscular or '-' }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <input type="number" name="series" class="form-control" placeholder="Séries" min="1" required>
+                    </div>
+                    <div class="col-md-2">
+                        <input type="number" name="repeticoes" class="form-control" placeholder="Reps" min="1" required>
+                    </div>
+                    <div class="col-md-3">
+                        <input type="number" step="0.01" name="carga" class="form-control" placeholder="Carga (kg)">
+                    </div>
+                    <div class="col-12 mt-2">
+                        <textarea name="observacoes" rows="2" class="form-control" placeholder="Observações (opcional)"></textarea>
+                    </div>
+                    <div class="col-12 mt-2 text-end">
+                        <button type="submit" class="btn btn-primary btn-sm">
+                            Adicionar exercício
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<hr class="my-4">
+
+<h3 class="h5 mb-3">Exercícios deste treino</h3>
+
+{% if exercicios_treino %}
+<div class="table-responsive">
+    <table class="table table-striped table-hover align-middle">
+        <thead class="table-dark">
+            <tr>
+                <th>#</th>
+                <th>Exercício</th>
+                <th>Séries x Reps</th>
+                <th>Carga</th>
+                <th>Observações</th>
+                <th style="width: 170px;">Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for e in exercicios_treino %}
+            <tr>
+                <td>{{ e.ordem }}</td>
+                <td>
+                    <strong>{{ e.nome }}</strong>
+                    {% if e.apelido %}
+                        <br><small class="text-muted">{{ e.apelido }}</small>
+                    {% endif %}
+                    <br><small class="text-muted">Grupo: {{ e.grupo_muscular or "-" }}</small>
+                </td>
+                <td>{{ e.series }} x {{ e.repeticoes }}</td>
+                <td>
+                    {% if e.carga is not none %}
+                        {{ e.carga }} kg
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+                <td class="text-truncate" style="max-width: 260px;">
+                    {{ e.observacoes or "-" }}
+                </td>
+                <td>
+                    <div class="d-flex flex-column gap-1">
+                        <div class="d-flex gap-1">
+                            <a
+                              href="/web/treinos/{{ treino.id }}/exercicios/{{ e.id }}/editar"
+                              class="btn btn-sm btn-outline-primary"
+                            >
+                                Editar
+                            </a>
+                            <form method="post"
+                                  action="/web/treinos/{{ treino.id }}/exercicios/{{ e.id }}/deletar"
+                                  onsubmit="return confirm('Remover este exercício do treino?');">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">
+                                    Remover
+                                </button>
+                            </form>
+                        </div>
+                        <div class="d-flex gap-1">
+                            <form method="post"
+                                  action="/web/treinos/{{ treino.id }}/exercicios/{{ e.id }}/mover">
+                                <input type="hidden" name="direcao" value="up">
+                                <button type="submit" class="btn btn-sm btn-outline-secondary">
+                                    ↑
+                                </button>
+                            </form>
+                            <form method="post"
+                                  action="/web/treinos/{{ treino.id }}/exercicios/{{ e.id }}/mover">
+                                <input type="hidden" name="direcao" value="down">
+                                <button type="submit" class="btn btn-sm btn-outline-secondary">
+                                    ↓
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="alert alert-info">
+    Este treino ainda não possui exercícios.
+    Use os formulários acima para adicionar.
+</div>
+{% endif %}
+{% endblock %}

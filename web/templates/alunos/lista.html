@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}{{ titulo or "Alunos" }} - Daily Trainer{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h4 mb-0">Alunos</h1>
+    <a href="/web/alunos/novo" class="btn btn-primary btn-sm">
+        + Novo Aluno
+    </a>
+</div>
+
+{% if alunos %}
+<div class="table-responsive">
+    <table class="table table-striped table-hover align-middle">
+        <thead class="table-dark">
+            <tr>
+                <th>ID</th>
+                <th>Nome</th>
+                <th>Gênero</th>
+                <th>Telefone</th>
+                <th>Turma</th>
+                <th>Observações</th>
+                <th style="width: 130px;">Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for aluno in alunos %}
+            <tr>
+                <td>{{ aluno.id }}</td>
+                <td>{{ aluno.nome }}</td>
+                <td>{{ aluno.genero }}</td>
+                <td>{{ aluno.telefone or "-" }}</td>
+                <td>{{ aluno.turma or "-" }}</td>
+                <td class="text-truncate" style="max-width: 260px;">
+                    {{ aluno.observacoes or "-" }}
+                </td>
+                <td>
+                    <div class="d-flex gap-1">
+                        <a
+                          href="/web/alunos/{{ aluno.id }}/editar"
+                          class="btn btn-sm btn-outline-primary"
+                        >
+                            Editar
+                        </a>
+                        <form
+                          method="post"
+                          action="/web/alunos/{{ aluno.id }}/deletar"
+                          onsubmit="return confirm('Tem certeza que deseja excluir este aluno? Esta ação também apagará os treinos dele.');"
+                        >
+                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                Excluir
+                            </button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="alert alert-info">
+    Nenhum aluno cadastrado ainda.
+    <a href="/web/alunos/novo" class="alert-link">Cadastrar primeiro aluno</a>.
+</div>
+{% endif %}
+{% endblock %}

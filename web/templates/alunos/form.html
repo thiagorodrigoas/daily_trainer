@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}
+    {% if modo == "editar" %}
+        Editar Aluno - Daily Trainer
+    {% else %}
+        Novo Aluno - Daily Trainer
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 col-lg-6">
+        <h1 class="h4 mb-3">
+            {% if modo == "editar" %}
+                Editar Aluno
+            {% else %}
+                Novo Aluno
+            {% endif %}
+        </h1>
+
+        <form method="post" action="{{ action_url }}">
+            <div class="mb-3">
+                <label for="nome" class="form-label">Nome</label>
+                <input
+                    type="text"
+                    class="form-control"
+                    id="nome"
+                    name="nome"
+                    required
+                    value="{{ aluno.nome if aluno else '' }}"
+                >
+            </div>
+
+            <div class="mb-3">
+                <label for="genero" class="form-label">Gênero</label>
+                <select
+                    class="form-select"
+                    id="genero"
+                    name="genero"
+                    required
+                >
+                    {% set genero_atual = aluno.genero if aluno else 'unissex' %}
+                    <option value="masculino" {% if genero_atual == 'masculino' %}selected{% endif %}>Masculino</option>
+                    <option value="feminino" {% if genero_atual == 'feminino' %}selected{% endif %}>Feminino</option>
+                    <option value="unissex" {% if genero_atual == 'unissex' %}selected{% endif %}>Unissex</option>
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label for="telefone" class="form-label">Telefone</label>
+                <input
+                    type="text"
+                    class="form-control"
+                    id="telefone"
+                    name="telefone"
+                    value="{{ aluno.telefone if aluno and aluno.telefone else '' }}"
+                    placeholder="(opcional)"
+                >
+            </div>
+            <div class="mb-3">
+                <label for="turma" class="form-label">Turma</label>
+                <input
+                    type="text"
+                    class="form-control"
+                    id="turma"
+                    name="turma"
+                    placeholder="Ex.: Manhã, Tarde, Avançado A, Grupo 2"
+                    value="{{ aluno.turma if aluno else '' }}"
+                >
+            </div>
+            <div class="mb-3">
+                <label for="observacoes" class="form-label">Observações</label>
+                <textarea
+                    class="form-control"
+                    id="observacoes"
+                    name="observacoes"
+                    rows="3"
+                    placeholder="Anotações sobre o aluno (opcional)"
+                >{{ aluno.observacoes if aluno and aluno.observacoes else '' }}</textarea>
+            </div>
+
+            <div class="d-flex justify-content-between">
+                <a href="/web/alunos" class="btn btn-secondary">
+                    Voltar
+                </a>
+
+                <button type="submit" class="btn btn-primary">
+                    {% if modo == "editar" %}Salvar alterações{% else %}Criar aluno{% endif %}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

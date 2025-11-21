@@ -58,14 +58,70 @@ def get_db_cursor():
 
 
 @router.get("/", response_class=HTMLResponse)
-def web_home(request: Request):
+def web_home(request: Request, cursor=Depends(get_db_cursor)):
     """
-    Página inicial da versão web do Daily Trainer.
-    Apenas renderiza um dashboard simples (que vamos criar em home.html).
+    Painel: alunos sem treino hoje (por turma) e resumo dos treinos do dia.
     """
+    hoje = date.today()
+
+    # Alunos sem treino hoje (sem registro na data)
+    cursor.execute(
+        """
+        SELECT id, nome, turma
+        FROM alunos a
+        WHERE NOT EXISTS (
+            SELECT 1 FROM treinos t
+            WHERE t.aluno_id = a.id AND t.data = ?
+        )
+        ORDER BY COALESCE(turma, ''), nome;
+        """,
+        [hoje],
+    )
+    rows = cursor.fetchall()
+    alunos_sem_treino = {}
+    for rid, nome, turma in rows:
+        turma_key = turma or "Sem turma"
+        alunos_sem_treino.setdefault(turma_key, []).append({"id": rid, "nome": nome})
+
+    # Alunos que treinaram hoje com grupos musculares
+    cursor.execute(
+        """
+        SELECT
+            a.id,
+            a.nome,
+            COALESCE(a.turma, 'Sem turma') AS turma,
+            COALESCE(e.grupo_muscular, 'Sem grupo') AS grupo
+        FROM treinos t
+        JOIN alunos a ON a.id = t.aluno_id
+        LEFT JOIN exercicios_do_treino edt ON edt.treino_id = t.id
+        LEFT JOIN exercicios e ON e.id = edt.exercicio_id
+        WHERE t.data = ?
+        ORDER BY turma, a.nome;
+        """,
+        [hoje],
+    )
+    rows = cursor.fetchall()
+    treinos_do_dia = {}
+    for aluno_id, nome, turma, grupo in rows:
+        turma_key = turma or "Sem turma"
+        turma_bucket = treinos_do_dia.setdefault(turma_key, {})
+        aluno_bucket = turma_bucket.setdefault(
+            aluno_id, {"nome": nome, "grupos": set()}
+        )
+        if grupo:
+            aluno_bucket["grupos"].add(grupo)
+
+    # Converte sets para listas ordenadas
+    for turma_key, alunos_dict in treinos_do_dia.items():
+        for aluno in alunos_dict.values():
+            aluno["grupos"] = sorted(aluno["grupos"])
+
     context = {
         "request": request,
         "titulo": "Daily Trainer - Web",
+        "alunos_sem_treino": alunos_sem_treino,
+        "treinos_do_dia": treinos_do_dia,
+        "hoje": hoje,
     }
     return templates.TemplateResponse("home.html", context)
 
@@ -491,12 +547,21 @@ def web_atualizar_treino(
     data_obj = date.fromisoformat(data)
 
     treino = Treino(
-        id=treino_id,
+        #id=treino_id,
         aluno_id=aluno_id,
         data=data_obj,
         observacoes=observacoes or None,
     )
 
+    # Valida aluno para evitar erro de FK
+    cursor.execute(
+        "SELECT id FROM alunos WHERE id = ?;",
+        [aluno_id],
+    )
+    if cursor.fetchone() is None:
+        return RedirectResponse(url="/web/treinos", status_code=303)
+    print('************************************************************************************************************')
+    print(treino)
     atualizado = update_treino(cursor, treino_id, treino)
     if not atualizado:
         return RedirectResponse(url="/web/treinos", status_code=303)

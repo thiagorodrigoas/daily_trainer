@@ -1,50 +1,134 @@
 {% extends "base.html" %}
 
-{% block title %}{{ titulo or "Daily Trainer - Web" }}{% endblock %}
+{% block title %}Painel - Daily Trainer{% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-12 mb-4">
-        <h1 class="h3">Daily Trainer - Painel Web</h1>
-        <p class="text-muted">
-            Visualize e gerencie alunos, treinos e exercícios usando a mesma base da API v2.
-        </p>
-    </div>
+<div class="mb-4">
+    <h1 class="h4 mb-1">Painel Diario</h1>
+    <div class="text-muted">Data: {{ hoje }}</div>
+</div>
 
-    <div class="col-md-4 mb-3">
-        <div class="card shadow-sm">
-            <div class="card-body">
-                <h5 class="card-title">Alunos</h5>
-                <p class="card-text">
-                    Veja a lista de alunos cadastrados e seus dados básicos.
-                </p>
-                <a href="/web/alunos" class="btn btn-primary btn-sm">Ir para Alunos</a>
+<div class="row g-3">
+    <div class="col-lg-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-body d-flex flex-column">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h2 class="h6 mb-0 text-uppercase text-muted">Alunos sem treino hoje</h2>
+                    <span class="badge bg-warning text-dark">Falta registrar</span>
+                </div>
+                {% if alunos_sem_treino %}
+                    {% for turma, lista in alunos_sem_treino.items() %}
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <strong>{{ turma }}</strong>
+                                <span class="text-muted small">{{ lista|length }} aluno(s)</span>
+                            </div>
+                            <div class="d-flex flex-wrap gap-2">
+                                {% for a in lista %}
+                                    <button
+                                      type="button"
+                                      class="badge bg-light text-dark border fw-semibold"
+                                      data-create-treino="{{ a.id }}"
+                                      title="Criar treino de hoje para {{ a.nome }}"
+                                    >
+                                        {{ a.nome }} (ID {{ a.id }})
+                                    </button>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-success">Todos os alunos tem treino registrado hoje.</div>
+                {% endif %}
+                <!-- <div class="mt-auto pt-3">
+                    <a href="/web/treinos" class="btn btn-sm btn-outline-primary">Ir para Treinos</a>
+                </div> -->
             </div>
         </div>
     </div>
 
-    <div class="col-md-4 mb-3">
-        <div class="card shadow-sm">
-            <div class="card-body">
-                <h5 class="card-title">Treinos</h5>
-                <p class="card-text">
-                    Consulte os treinos (sessões do dia) vinculados aos alunos.
-                </p>
-                <a href="/web/treinos" class="btn btn-primary btn-sm">Ir para Treinos</a>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-md-4 mb-3">
-        <div class="card shadow-sm">
-            <div class="card-body">
-                <h5 class="card-title">Exercícios</h5>
-                <p class="card-text">
-                    Gerencie o catálogo de exercícios e padrões por grupo muscular.
-                </p>
-                <a href="/web/exercicios" class="btn btn-primary btn-sm">Ir para Exercícios</a>
+    <div class="col-lg-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-body d-flex flex-column">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h2 class="h6 mb-0 text-uppercase text-muted">Treinos do dia</h2>
+                    <span class="badge bg-success">Concluidos</span>
+                </div>
+                {% if treinos_do_dia %}
+                    {% for turma, alunos in treinos_do_dia.items() %}
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <strong>{{ turma }}</strong>
+                                <span class="text-muted small">{{ alunos|length }} aluno(s)</span>
+                            </div>
+                            <div class="list-group">
+                                {% for aluno_id, info in alunos.items() %}
+                                    <div class="list-group-item bg-transparent text-light border-secondary">
+                                        <div class="d-flex justify-content-between">
+                                            <div>
+                                                <div class="text-dark fw-semibold">{{ info.nome }}</div>
+                                                <div class="small text-muted">ID {{ aluno_id }}</div>
+                                            </div>
+                                            {% if info.grupos %}
+                                                <div class="d-flex flex-wrap gap-1">
+                                                    {% for g in info.grupos %}
+                                                        <span class="badge bg-light text-dark border fw-semibold ">
+                                                            {{ g }}
+                                                        </span>
+                                                    {% endfor %}
+                                                </div>
+                                            {% else %}
+                                                <span class="text-muted small">Sem grupos registrados</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-muted">Nenhum treino registrado hoje ainda.</div>
+                {% endif %}
+                <!-- <div class="mt-auto pt-3">
+                    <a href="/web/treinos" class="btn btn-sm btn-outline-primary">Ver treinos</a>
+                </div> -->
             </div>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+{{ super() }}
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    // Criar treino de hoje ao clicar no badge do aluno
+    document.querySelectorAll('[data-create-treino]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var alunoId = btn.getAttribute('data-create-treino');
+        if (!alunoId) return;
+        var form = document.createElement('form');
+        form.method = 'post';
+        form.action = '/web/treinos/novo';
+        var alunoInput = document.createElement('input');
+        alunoInput.type = 'hidden';
+        alunoInput.name = 'aluno_id';
+        alunoInput.value = alunoId;
+        form.appendChild(alunoInput);
+        var dataInput = document.createElement('input');
+        dataInput.type = 'hidden';
+        dataInput.name = 'data';
+        dataInput.value = '{{ hoje }}';
+        form.appendChild(dataInput);
+        var obsInput = document.createElement('input');
+        obsInput.type = 'hidden';
+        obsInput.name = 'observacoes';
+        obsInput.value = '';
+        form.appendChild(obsInput);
+        document.body.appendChild(form);
+        form.submit();
+      });
+    });
+  });
+</script>
 {% endblock %}

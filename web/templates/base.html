@@ -13,7 +13,56 @@
       crossorigin="anonymous"
     >
 
-    <!-- Estilos próprios se quiser depois: web/static/css/main.css -->
+    <!-- Estilos próprios adicionais -->
+    <!-- <style>
+      :root {
+        --dt-bg: #0b1620;
+        --dt-card: #122233;
+        --dt-border: #1f3347;
+        --dt-muted: #9bb3cc;
+      }
+      body {
+        background: radial-gradient(circle at 10% 20%, #10263c 0%, #0b1620 45%, #081119 100%);
+        color: #e8f0f7;
+        min-height: 100vh;
+      }
+      .card {
+        background: var(--dt-card);
+        border: 1px solid var(--dt-border);
+      }
+      .navbar-dark.bg-dark {
+        background: #0b1826 !important;
+        border-bottom: 1px solid var(--dt-border);
+      }
+      .table {
+        color: #d8e6f3;
+      }
+      .table thead tr {
+        background-color: #0f2233;
+      }
+      .table-hover tbody tr:hover {
+        background-color: rgba(255, 255, 255, 0.03);
+      }
+      .badge {
+        border-radius: 999px;
+      }
+      a, .btn-link {
+        color: #7bc7ff;
+      }
+      a:hover, .btn-link:hover { color: #9dd9ff; }
+      .btn.btn-primary {
+        background: linear-gradient(90deg, #1f8bff, #00c2ff);
+        border: none;
+      }
+      .btn.btn-outline-primary {
+        border-color: #1f8bff;
+        color: #7bc7ff;
+      }
+      .btn.btn-outline-primary:hover {
+        background: #1f8bff;
+        color: #fff;
+      }
+    </style> -->
     {% block extra_css %}{% endblock %}
 </head>
 <body class="bg-light">

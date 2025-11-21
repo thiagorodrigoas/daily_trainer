@@ -237,6 +237,14 @@ def atualizar_treino(
     if cursor.fetchone() is None:
         raise HTTPException(status_code=404, detail="Treino não encontrado")
 
+    # Valida aluno para evitar violar FK ao atualizar
+    cursor.execute(
+        "SELECT id FROM alunos WHERE id = ?;",
+        [treino.aluno_id],
+    )
+    if cursor.fetchone() is None:
+        raise HTTPException(status_code=400, detail="Aluno não encontrado para este treino")
+
     cursor.execute(
         """
         UPDATE treinos

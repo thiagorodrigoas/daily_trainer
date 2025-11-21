@@ -95,6 +95,10 @@
       </div>
       <form id="formEditarExercicioCatalogo" method="post">
         <div class="modal-body">
+          <div class="mb-2">
+            <label class="form-label" for="modalIdEx">ID</label>
+            <input type="text" class="form-control" id="modalIdEx" value="" disabled>
+          </div>
           <div class="row g-2">
             <div class="col-md-6">
               <label class="form-label" for="modalNomeEx">Nome</label>
@@ -231,11 +235,13 @@
     var reps = document.getElementById('modalRepsEx');
     var padrao = document.getElementById('modalPadraoEx');
     var desc = document.getElementById('modalDescEx');
+    var idField = document.getElementById('modalIdEx');
 
     document.querySelectorAll('.btn-editar-exercicio').forEach(function(btn){
       btn.addEventListener('click', function(ev){
         ev.preventDefault();
         var id = btn.getAttribute('data-id');
+        idField.value = id;
         nome.value = btn.getAttribute('data-nome') || '';
         apelido.value = btn.getAttribute('data-apelido') || '';
         grupo.value = btn.getAttribute('data-grupo') || '';

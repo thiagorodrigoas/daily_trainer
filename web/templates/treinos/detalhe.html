@@ -17,17 +17,6 @@
         <h1 class="h5 mb-0">Treino #{{ treino.id }}</h1>
         <small class="text-muted">Aluno {{ treino.aluno_nome }} (ID {{ treino.aluno_id }}) &bull; {{ treino.data }}</small>
     </div>
-    <button
-      type="button"
-      class="btn btn-sm btn-outline-primary ms-auto"
-      id="btnEditarTreino"
-      data-treino-id="{{ treino.id }}"
-      data-aluno-id="{{ treino.aluno_id }}"
-      data-data="{{ treino.data }}"
-      data-observacoes="{{ treino.observacoes|default('', true) }}"
-    >
-      Editar treino
-    </button>
 </div>
 
 <div class="row g-3">
@@ -262,6 +251,10 @@
       <form id="formEditarTreino" method="post">
         <div class="modal-body">
           <div class="mb-3">
+            <label class="form-label" for="modalIdTreino">ID</label>
+            <input type="text" class="form-control" id="modalIdTreino" value="" disabled>
+          </div>
+          <div class="mb-3">
             <label class="form-label" for="modalAlunoId">Aluno</label>
             <select class="form-select" name="aluno_id" id="modalAlunoId" required>
               {% for aluno in alunos_lista %}
@@ -299,6 +292,10 @@
         <div class="modal-body">
           <div class="mb-2">
             <strong id="modalExNome"></strong>
+          </div>
+          <div class="mb-3">
+            <label class="form-label" for="modalExId">ID</label>
+            <input type="text" class="form-control" id="modalExId" value="" disabled>
           </div>
           <div class="row g-2">
             <div class="col-md-4">
@@ -339,6 +336,7 @@
     var alunoTreino = document.getElementById('modalAlunoId');
     var dataTreino = document.getElementById('modalData');
     var obsTreino = document.getElementById('modalObsTreino');
+    var idTreino = document.getElementById('modalIdTreino');
     function bindEditarTreino(btn) {
       if (!btn) return;
       btn.addEventListener('click', function() {
@@ -347,6 +345,7 @@
         var dataVal = btn.getAttribute('data-data');
         var obsVal = btn.getAttribute('data-observacoes') || '';
 
+        idTreino.value = treinoId;
         formTreino.setAttribute('action', '/web/treinos/' + treinoId + '/editar');
         alunoTreino.value = alunoId;
         dataTreino.value = dataVal;
@@ -366,6 +365,7 @@
     var cargaInput = document.getElementById('modalCarga');
     var obsInput = document.getElementById('modalObs');
     var nomeLabel = document.getElementById('modalExNome');
+    var idExInput = document.getElementById('modalExId');
 
     document.querySelectorAll('.btn-editar-exercicio').forEach(function(btn){
       btn.addEventListener('click', function(ev){
@@ -377,6 +377,7 @@
         var obs = btn.getAttribute('data-observacoes') || '';
         var nome = btn.getAttribute('data-nome') || '';
 
+        idExInput.value = exId;
         formEditar.setAttribute('action', '/web/treinos/{{ treino.id }}/exercicios/' + exId + '/editar');
         seriesInput.value = series;
         repsInput.value = reps;

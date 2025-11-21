@@ -83,6 +83,10 @@
       <form id="formEditarAluno" method="post">
         <div class="modal-body">
           <div class="mb-3">
+            <label class="form-label" for="modalIdAluno">ID</label>
+            <input type="text" class="form-control" id="modalIdAluno" value="" disabled>
+          </div>
+          <div class="mb-3">
             <label class="form-label" for="modalNomeAluno">Nome</label>
             <input type="text" class="form-control" id="modalNomeAluno" name="nome" required>
           </div>
@@ -183,11 +187,13 @@
     var telefone = document.getElementById('modalTelefoneAluno');
     var turma = document.getElementById('modalTurmaAluno');
     var obs = document.getElementById('modalObsAluno');
+    var idField = document.getElementById('modalIdAluno');
 
     document.querySelectorAll('.btn-editar-aluno').forEach(function(btn){
       btn.addEventListener('click', function(ev){
         ev.preventDefault();
         var id = btn.getAttribute('data-id');
+        idField.value = id;
         nome.value = btn.getAttribute('data-nome') || '';
         genero.value = btn.getAttribute('data-genero') || 'unissex';
         telefone.value = btn.getAttribute('data-telefone') || '';

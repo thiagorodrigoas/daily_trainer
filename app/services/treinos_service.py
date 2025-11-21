@@ -68,6 +68,7 @@ def create_treino(cursor, treino: Treino) -> Treino:
 
 
 def update_treino(cursor, treino_id: int, treino: Treino) -> Optional[Treino]:
+    # Confirma que o treino existe
     cursor.execute(
         "SELECT id FROM treinos WHERE id = ?;",
         [treino_id],
@@ -75,14 +76,22 @@ def update_treino(cursor, treino_id: int, treino: Treino) -> Optional[Treino]:
     if cursor.fetchone() is None:
         return None
 
+    # Valida FK do aluno para evitar erro de constraint
+    cursor.execute(
+        "SELECT id FROM alunos WHERE id = ?;",
+        [treino.aluno_id],
+    )
+    if cursor.fetchone() is None:
+        return None
+
     cursor.execute(
         """
         UPDATE treinos
-        SET aluno_id = ?, data = ?, observacoes = ?
+        SET data = ?, observacoes = ?
         WHERE id = ?;
         """,
         [
-            treino.aluno_id,
+            # treino.aluno_id,
             treino.data,
             treino.observacoes,
             treino_id,

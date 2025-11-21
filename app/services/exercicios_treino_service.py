@@ -292,13 +292,14 @@ def adicionar_exercicios_padrao_ao_treino_service(
 
     # Buscar exercícios padrão naquele grupo e gênero
     if genero_aluno == "unissex":
+        # Para alunos unissex, traz todos os exercicios padrao do grupo
         cursor.execute(
             """
             SELECT id, series_padrao, repeticoes_padrao
             FROM exercicios
             WHERE padrao = TRUE
               AND lower(grupo_muscular) = ?
-              AND publico_alvo = 'unissex'
+              AND publico_alvo IN ('masculino', 'feminino', 'unissex')
             ORDER BY id;
             """,
             [grupo_norm],
@@ -457,7 +458,7 @@ def gerar_treino_por_musculos_service(
                 FROM exercicios
                 WHERE padrao = TRUE
                   AND lower(grupo_muscular) = ?
-                  AND publico_alvo = 'unissex'
+                  AND publico_alvo IN ('masculino', 'feminino', 'unissex')
                 ORDER BY id;
                 """,
                 [grupo_norm],

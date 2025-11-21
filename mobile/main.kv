@@ -1,0 +1,143 @@
+#:kivy 1.0
+<TabDashboard>:
+    MDBoxLayout:
+        orientation: "vertical"
+        md_bg_color: 0.96, 0.97, 0.98, 1
+        MDBoxLayout:
+            adaptive_height: True
+            padding: dp(12)
+            spacing: dp(8)
+            MDLabel:
+                text: "Painel"
+                theme_text_color: "Custom"
+                text_color: 0, 0, 0, 1
+                font_style: "H6"
+            MDIconButton:
+                icon: "refresh"
+                on_release: app.load_dashboard()
+                theme_text_color: "Custom"
+                text_color: 0, 0, 0, 1
+        MDBoxLayout:
+            orientation: "vertical"
+            padding: dp(12)
+            spacing: dp(2)
+            MDLabel:
+                text: "Alunos sem treino hoje"
+                theme_text_color: "Custom"
+                text_color: 0, 0, 0, 1
+                font_style: "Caption"
+            ScrollView:
+                MDList:
+                    id: dash_sem_treino
+        MDBoxLayout:
+            orientation: "vertical"
+            padding: dp(12)
+            spacing: dp(2)
+            MDLabel:
+                text: "Treinos do dia"
+                theme_text_color: "Custom"
+                text_color: 0, 0, 0, 1
+                font_style: "Caption"
+            ScrollView:
+                MDList:
+                    id: dash_treinos
+        MDBoxLayout:
+            adaptive_height: True
+            padding: dp(12)
+            Widget:
+            MDFloatingActionButton:
+                icon: "microphone"
+                md_bg_color: 0.2, 0.5, 0.9, 1
+                pos_hint: {"right": 1, "y": 0}
+                on_release: app.show_error("Botão de gravar áudio (implementar)")
+
+<TabAlunos>:
+    MDBoxLayout:
+        orientation: "vertical"
+        md_bg_color: 0.96, 0.97, 0.98, 1
+        MDBoxLayout:
+            adaptive_height: True
+            padding: dp(12)
+            spacing: dp(8)
+            MDLabel:
+                text: "Alunos"
+                theme_text_color: "Custom"
+                text_color: 0, 0, 0, 1
+                font_style: "H6"
+            MDIconButton:
+                icon: "refresh"
+                on_release: app.load_alunos()
+                theme_text_color: "Custom"
+                text_color: 0, 0, 0, 1
+        ScrollView:
+            MDList:
+                id: alunos_list
+
+<TabTreinos>:
+    MDBoxLayout:
+        orientation: "vertical"
+        md_bg_color: 0.96, 0.97, 0.98, 1
+        MDBoxLayout:
+            adaptive_height: True
+            padding: dp(12)
+            spacing: dp(8)
+            MDLabel:
+                text: "Treinos"
+                theme_text_color: "Custom"
+                text_color: 0, 0, 0, 1
+                font_style: "H6"
+            MDIconButton:
+                icon: "refresh"
+                on_release: app.load_treinos()
+                theme_text_color: "Custom"
+                text_color: 0, 0, 0, 1
+        ScrollView:
+            MDList:
+                id: treinos_list
+
+<TabExercicios>:
+    MDBoxLayout:
+        orientation: "vertical"
+        md_bg_color: 0.96, 0.97, 0.98, 1
+        MDBoxLayout:
+            adaptive_height: True
+            padding: dp(12)
+            spacing: dp(8)
+            MDLabel:
+                text: "Exercícios"
+                theme_text_color: "Custom"
+                text_color: 0, 0, 0, 1
+                font_style: "H6"
+            MDIconButton:
+                icon: "refresh"
+                on_release: app.load_exercicios()
+                theme_text_color: "Custom"
+                text_color: 0, 0, 0, 1
+        ScrollView:
+            MDList:
+                id: exercicios_list
+
+ScreenManager:
+    MDScreen:
+        name: "main"
+        MDBoxLayout:
+            orientation: "vertical"
+            md_bg_color: 0.96, 0.97, 0.98, 1
+            
+            MDTabs:
+                id: tabs
+                TabDashboard:
+                    id: dash_tab
+                    text: "Painel"
+                TabAlunos:
+                    id: alunos_tab
+                    text: "Alunos"
+                    icon: "account-group"
+                TabTreinos:
+                    id: treinos_tab
+                    text: "Treinos"
+                    icon: "dumbbell"
+                TabExercicios:
+                    id: exercicios_tab
+                    text: "Exercícios"
+                    icon: "arm-flex"

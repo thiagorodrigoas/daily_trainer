@@ -139,10 +139,76 @@ def web_listar_alunos(
     """
     alunos = list_alunos(cursor)
 
+    treinos_por_aluno = {}
+    if alunos:
+        aluno_ids = [a.id for a in alunos if a.id is not None]
+        if aluno_ids:
+            placeholders = ",".join(["?"] * len(aluno_ids))
+            cursor.execute(
+                f"""
+                SELECT
+                    t.id,
+                    t.aluno_id,
+                    t.data,
+                    COALESCE(e.grupo_muscular, 'Sem grupo') AS grupo,
+                    COALESCE(e.nome, 'Sem exercicio') AS exercicio
+                FROM treinos t
+                LEFT JOIN exercicios_do_treino edt ON edt.treino_id = t.id
+                LEFT JOIN exercicios e ON e.id = edt.exercicio_id
+                WHERE t.aluno_id IN ({placeholders})
+                ORDER BY t.data DESC, t.id DESC, edt.ordem NULLS LAST, edt.id NULLS LAST;
+                """,
+                aluno_ids,
+            )
+            rows = cursor.fetchall()
+            for treino_id, aluno_id, data, grupo, exercicio in rows:
+                aluno_bucket = treinos_por_aluno.setdefault(
+                    aluno_id, {}
+                )
+                treino_bucket = aluno_bucket.setdefault(
+                    treino_id,
+                    {
+                        "id": treino_id,
+                        "data": data,
+                        "grupos": set(),
+                        "exercicios": [],
+                    },
+                )
+                if grupo:
+                    treino_bucket["grupos"].add(grupo)
+                if exercicio:
+                    treino_bucket["exercicios"].append({"nome": exercicio, "grupo": grupo})
+
+    # Converte sets para listas ordenadas
+    cores = ["primary", "success", "info", "warning", "danger", "secondary", "pink", "teal"]
+    for treinos_dict in treinos_por_aluno.values():
+        for treino in treinos_dict.values():
+            grupos_ord = sorted(treino["grupos"])
+            color_map = {g: cores[idx % len(cores)] for idx, g in enumerate(grupos_ord)}
+            group_order = {g: idx for idx, g in enumerate(grupos_ord)}
+            treino["grupos"] = grupos_ord
+            treino["grupos_color"] = [{"nome": g, "cor": color_map[g]} for g in grupos_ord]
+            exercicios_color = []
+            for ex in treino["exercicios"]:
+                grupo = ex.get("grupo") or "Sem grupo"
+                cor = color_map.get(grupo, cores[0])
+                exercicios_color.append(
+                    {
+                        "nome": ex.get("nome"),
+                        "grupo": grupo,
+                        "cor": cor,
+                    }
+                )
+            treino["exercicios"] = sorted(
+                exercicios_color,
+                key=lambda ex: (group_order.get(ex["grupo"], 999), ex["nome"] or ""),
+            )
+
     context = {
         "request": request,
         "titulo": "Alunos",
         "alunos": alunos,
+        "treinos_por_aluno": treinos_por_aluno,
     }
     return templates.TemplateResponse("alunos/lista.html", context)
 

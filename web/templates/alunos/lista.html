@@ -15,6 +15,7 @@
     <table class="table table-striped table-hover align-middle">
         <thead class="table-dark">
             <tr>
+                <th style="width: 36px;"></th>
                 <th>ID</th>
                 <th>Nome</th>
                 <th>Genero</th>
@@ -26,8 +27,10 @@
         </thead>
         <tbody>
         {% for aluno in alunos %}
-            <tr>
-                <td>{{ aluno.id }}</td>
+            {% set treinos = treinos_por_aluno.get(aluno.id, {}) %}
+            <tr class="aluno-row" role="button" data-collapse-target="aluno-{{ aluno.id }}">
+                <td class="text-center align-middle"><span class="caret-icon">&#9656;</span></td>
+                <td class="fw-semibold">{{ aluno.id }}</td>
                 <td>{{ aluno.nome }}</td>
                 <td>{{ aluno.genero }}</td>
                 <td>{{ aluno.telefone or "-" }}</td>
@@ -58,6 +61,48 @@
                                 Excluir
                             </button>
                         </form>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="8" class="p-0 border-0">
+                    <div class="collapse" id="aluno-{{ aluno.id }}">
+                        <div class="p-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <strong>Histórico de treinos</strong>
+                                <span class="text-muted small">{{ treinos|length }} treino(s)</span>
+                            </div>
+                            {% if treinos %}
+                                {% set cores = ['primary','success','info','warning','danger','secondary','pink','teal'] %}
+                                <div class="list-group">
+                                    {% for treino in treinos.values() %}
+                                        <div class="list-group-item bg-transparent text-light border-secondary">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <div>
+                                                    <div class="fw-semibold text-dark bg-light px-2 py-1 rounded">Data: {{ treino.data }}</div>
+                                                </div>
+                                                  <div class="d-flex flex-wrap gap-1">
+                                                      {% for g in treino.grupos_color %}
+                                                          <span class="badge bg-{{ g.cor }} text-dark border fw-semibold">{{ g.nome }}</span>
+                                                      {% endfor %}
+                                                  </div>
+                                              </div>
+                                              {% if treino.exercicios %}
+                                                  <div class="small text-muted mt-2">
+                                                      {% for ex in treino.exercicios %}
+                                                          <span class="badge bg-{{ ex.cor }} text-dark border fw-semibold">
+                                                              {{ ex.nome }}
+                                                          </span>
+                                                      {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <div class="text-muted">Nenhum treino registrado para este aluno.</div>
+                            {% endif %}
+                        </div>
                     </div>
                 </td>
             </tr>
@@ -204,6 +249,44 @@
         bsModal.show();
       });
     });
+
+    // Clique na linha (fora da area de acoes) para toggle manual
+    document.querySelectorAll('.aluno-row').forEach(function(row) {
+      row.addEventListener('click', function(ev) {
+        if (ev.target.closest('[data-prevent-toggle="true"]')) return;
+        var targetId = row.getAttribute('data-collapse-target');
+        var col = document.getElementById(targetId);
+        if (!col) return;
+        var bsCol = bootstrap.Collapse.getOrCreateInstance(col, { toggle: false });
+        bsCol.toggle();
+      });
+    });
+        // Impede propagacao nos elementos de acao
+    var stopSelectors = ['.aluno-row a', '.aluno-row button', '.aluno-row form'];
+    stopSelectors.forEach(function(sel) {
+      document.querySelectorAll(sel).forEach(function(el) {
+        ['click','mousedown'].forEach(function(evt){
+          el.addEventListener(evt, function(ev) { ev.stopPropagation(); });
+        });
+      });
+    });
+
+    // // Toggle de historico por linha
+    // document.querySelectorAll('.aluno-row').forEach(function(row){
+    //   var targetId = row.getAttribute('data-collapse-target');
+    //   var col = document.getElementById(targetId);
+    //   var icon = row.querySelector('.caret-icon');
+    //   if (col) {
+    //     col.addEventListener('show.bs.collapse', function(){ if (icon) icon.innerHTML = '▼'; });
+    //     col.addEventListener('hide.bs.collapse', function(){ if (icon) icon.innerHTML = '▶'; });
+    //   }
+    //   row.addEventListener('click', function(ev){
+    //     if (ev.target.closest('button') || ev.target.closest('form')) return;
+    //     if (!col) return;
+    //     var bsCol = bootstrap.Collapse.getOrCreateInstance(col, {toggle: false});
+    //     bsCol.toggle();
+    //   });
+    // });
   });
 </script>
 {% endblock %}

@@ -5,9 +5,9 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h1 class="h4 mb-0">Alunos</h1>
-    <a href="/web/alunos/novo" class="btn btn-primary btn-sm">
+    <button type="button" class="btn btn-primary btn-sm" id="btnNovoAluno">
         + Novo Aluno
-    </a>
+    </button>
 </div>
 
 {% if alunos %}
@@ -17,11 +17,11 @@
             <tr>
                 <th>ID</th>
                 <th>Nome</th>
-                <th>Gênero</th>
+                <th>Genero</th>
                 <th>Telefone</th>
                 <th>Turma</th>
-                <th>Observações</th>
-                <th style="width: 130px;">Ações</th>
+                <th>Observacoes</th>
+                <th style="width: 170px;">Acoes</th>
             </tr>
         </thead>
         <tbody>
@@ -37,16 +37,22 @@
                 </td>
                 <td>
                     <div class="d-flex gap-1">
-                        <a
-                          href="/web/alunos/{{ aluno.id }}/editar"
-                          class="btn btn-sm btn-outline-primary"
+                        <button
+                          type="button"
+                          class="btn btn-sm btn-outline-primary btn-editar-aluno"
+                          data-id="{{ aluno.id }}"
+                          data-nome="{{ aluno.nome }}"
+                          data-genero="{{ aluno.genero }}"
+                          data-telefone="{{ aluno.telefone }}"
+                          data-turma="{{ aluno.turma }}"
+                          data-observacoes="{{ aluno.observacoes|default('', true) }}"
                         >
                             Editar
-                        </a>
+                        </button>
                         <form
                           method="post"
                           action="/web/alunos/{{ aluno.id }}/deletar"
-                          onsubmit="return confirm('Tem certeza que deseja excluir este aluno? Esta ação também apagará os treinos dele.');"
+                          onsubmit="return confirm('Tem certeza que deseja excluir este aluno? Esta acao tambem apagara os treinos dele.');"
                         >
                             <button type="submit" class="btn btn-sm btn-outline-danger">
                                 Excluir
@@ -65,4 +71,133 @@
     <a href="/web/alunos/novo" class="alert-link">Cadastrar primeiro aluno</a>.
 </div>
 {% endif %}
+
+<!-- Modal editar aluno -->
+<div class="modal fade" id="modalEditarAluno" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Editar aluno</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+      </div>
+      <form id="formEditarAluno" method="post">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label" for="modalNomeAluno">Nome</label>
+            <input type="text" class="form-control" id="modalNomeAluno" name="nome" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label" for="modalGeneroAluno">Genero</label>
+            <select class="form-select" id="modalGeneroAluno" name="genero" required>
+              <option value="masculino">Masculino</option>
+              <option value="feminino">Feminino</option>
+              <option value="unissex">Unissex</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label" for="modalTelefoneAluno">Telefone</label>
+            <input type="text" class="form-control" id="modalTelefoneAluno" name="telefone">
+          </div>
+          <div class="mb-3">
+            <label class="form-label" for="modalTurmaAluno">Turma</label>
+            <input type="text" class="form-control" id="modalTurmaAluno" name="turma">
+          </div>
+          <div class="mb-3">
+            <label class="form-label" for="modalObsAluno">Observacoes</label>
+            <textarea class="form-control" id="modalObsAluno" name="observacoes" rows="3"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal novo aluno -->
+<div class="modal fade" id="modalNovoAluno" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Novo aluno</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+      </div>
+      <form id="formNovoAluno" method="post" action="/web/alunos/novo">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label" for="novoNomeAluno">Nome</label>
+            <input type="text" class="form-control" id="novoNomeAluno" name="nome" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label" for="novoGeneroAluno">Genero</label>
+            <select class="form-select" id="novoGeneroAluno" name="genero" required>
+              <option value="masculino">Masculino</option>
+              <option value="feminino">Feminino</option>
+              <option value="unissex" selected>Unissex</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label" for="novoTelefoneAluno">Telefone</label>
+            <input type="text" class="form-control" id="novoTelefoneAluno" name="telefone">
+          </div>
+          <div class="mb-3">
+            <label class="form-label" for="novoTurmaAluno">Turma</label>
+            <input type="text" class="form-control" id="novoTurmaAluno" name="turma">
+          </div>
+          <div class="mb-3">
+            <label class="form-label" for="novoObsAluno">Observacoes</label>
+            <textarea class="form-control" id="novoObsAluno" name="observacoes" rows="3"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ super() }}
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    // Novo aluno
+    var modalNovo = document.getElementById('modalNovoAluno');
+    var btnNovo = document.getElementById('btnNovoAluno');
+    if (btnNovo) {
+      btnNovo.addEventListener('click', function() {
+        document.getElementById('formNovoAluno').reset();
+        var bsModal = bootstrap.Modal.getOrCreateInstance(modalNovo);
+        bsModal.show();
+      });
+    }
+
+    var modal = document.getElementById('modalEditarAluno');
+    var form = document.getElementById('formEditarAluno');
+    var nome = document.getElementById('modalNomeAluno');
+    var genero = document.getElementById('modalGeneroAluno');
+    var telefone = document.getElementById('modalTelefoneAluno');
+    var turma = document.getElementById('modalTurmaAluno');
+    var obs = document.getElementById('modalObsAluno');
+
+    document.querySelectorAll('.btn-editar-aluno').forEach(function(btn){
+      btn.addEventListener('click', function(ev){
+        ev.preventDefault();
+        var id = btn.getAttribute('data-id');
+        nome.value = btn.getAttribute('data-nome') || '';
+        genero.value = btn.getAttribute('data-genero') || 'unissex';
+        telefone.value = btn.getAttribute('data-telefone') || '';
+        turma.value = btn.getAttribute('data-turma') || '';
+        obs.value = btn.getAttribute('data-observacoes') || '';
+        form.setAttribute('action', '/web/alunos/' + id + '/editar');
+        var bsModal = bootstrap.Modal.getOrCreateInstance(modal);
+        bsModal.show();
+      });
+    });
+  });
+</script>
 {% endblock %}

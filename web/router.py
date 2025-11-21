@@ -204,8 +204,10 @@ def web_listar_treinos(
 
     treinos_view = list_treinos_with_aluno(cursor)
 
-    # Mapeia exercicios agrupados por grupo_muscular para cada treino
+    # Mapeia exercicios agrupados por grupo_muscular e prepara resumo para cada treino
     exercicios_por_treino = {}
+    exercicios_resumo = {}
+    alunos_lista = list_alunos(cursor)
     if treinos_view:
         treino_ids = [t["id"] for t in treinos_view]
         placeholders = ",".join(["?"] * len(treino_ids))
@@ -229,12 +231,22 @@ def web_listar_treinos(
             if apelido:
                 display_nome += f" ({apelido})"
             grupos.setdefault(grupo, []).append(display_nome)
+        # Resumo: total de exercicios e grupos ordenados
+        for treino_id, grupos in exercicios_por_treino.items():
+            total = sum(len(nomes) for nomes in grupos.values())
+            grupos_ordenados = sorted(grupos.items(), key=lambda x: x[0])
+            exercicios_resumo[treino_id] = {
+                "total": total,
+                "grupos": grupos_ordenados,
+            }
 
     context = {
-        "request": request,
+            "request": request,
             "titulo": "Treinos",
             "treinos": treinos_view,
             "exercicios_por_treino": exercicios_por_treino,
+            "exercicios_resumo": exercicios_resumo,
+            "alunos_lista": alunos_lista,
     }
     return templates.TemplateResponse("treinos/lista.html", context)
 
@@ -279,8 +291,8 @@ def web_criar_treino(
         observacoes=observacoes or None,
     )
 
-    create_treino(cursor, treino)
-    return RedirectResponse(url="/web/treinos", status_code=303)
+    novo = create_treino(cursor, treino)
+    return RedirectResponse(url=f"/web/treinos/{novo.id}", status_code=303)
 
 @router.get("/treinos/{treino_id}", response_class=HTMLResponse)
 def web_detalhe_treino(
@@ -298,7 +310,7 @@ def web_detalhe_treino(
     # Buscar treino + nome do aluno
     cursor.execute(
         """
-        SELECT t.id, t.aluno_id, t.data, t.observacoes, a.nome
+        SELECT t.id, t.aluno_id, t.data, t.observacoes, a.nome, a.genero
         FROM treinos t
         JOIN alunos a ON a.id = t.aluno_id
         WHERE t.id = ?;
@@ -315,7 +327,11 @@ def web_detalhe_treino(
         "data": row[2],
         "observacoes": row[3],
         "aluno_nome": row[4],
+        "aluno_genero": row[5],
     }
+
+
+
 
     # Exercícios do treino (com info do catálogo)
     cursor.execute(
@@ -355,6 +371,41 @@ def web_detalhe_treino(
         for r in rows
     ]
 
+    grupos_resumo = {}
+    for e in exercicios_treino:
+        nome_grupo = e["grupo_muscular"] or "Sem grupo"
+        grupos_resumo[nome_grupo] = grupos_resumo.get(nome_grupo, 0) + 1
+
+    # Grupos musculares disponiveis para exercicios padrao conforme genero do aluno
+    grupos_padrao = []
+    genero_aluno = treino_view["aluno_genero"]
+    if genero_aluno == "unissex":
+        cursor.execute(
+            """
+            SELECT DISTINCT lower(grupo_muscular)
+            FROM exercicios
+            WHERE padrao = TRUE
+              AND publico_alvo = 'unissex'
+              AND grupo_muscular IS NOT NULL
+              AND TRIM(grupo_muscular) <> '';
+            """
+        )
+    else:
+        cursor.execute(
+            """
+            SELECT DISTINCT lower(grupo_muscular)
+            FROM exercicios
+            WHERE padrao = TRUE
+              AND publico_alvo IN (?, 'unissex')
+              AND grupo_muscular IS NOT NULL
+              AND TRIM(grupo_muscular) <> '';
+            """,
+            [genero_aluno],
+        )
+    grupos_padrao = sorted([row[0] for row in cursor.fetchall()])
+
+    alunos_lista = list_alunos(cursor)
+
     # Exercícios disponíveis no catálogo (para adicionar manualmente)
     exercicios_catalogo = service_list_exercicios(cursor, genero=None)
 
@@ -365,6 +416,10 @@ def web_detalhe_treino(
         "exercicios_treino": exercicios_treino,
         "exercicios_catalogo": exercicios_catalogo,
         "perfis": ["leve", "moderado", "intenso"],
+        "total_exercicios": len(exercicios_treino),
+        "grupos_resumo": grupos_resumo,
+        "alunos_lista": alunos_lista,
+        "grupos_padrao": grupos_padrao,
     }
     return templates.TemplateResponse("treinos/detalhe.html", context)
 

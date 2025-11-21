@@ -2,12 +2,25 @@
 
 {% block title %}{{ titulo or "Treinos" }} - Daily Trainer{% endblock %}
 
+{% block extra_css %}
+{{ super() }}
+<style>
+  .treino-row { cursor: pointer; }
+  .caret-icon { transition: transform 0.2s ease; display: inline-block; }
+  .caret-open { transform: rotate(90deg); }
+  .table-sm-badges .badge { font-weight: 600; }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-3">
-    <h1 class="h4 mb-0">Treinos</h1>
-    <a href="/web/treinos/novo" class="btn btn-primary btn-sm">
+    <div>
+        <h1 class="h4 mb-0">Treinos</h1>
+        <small class="text-muted">Total: {{ treinos|length }} treino{{ treinos|length != 1 and 's' or '' }}</small>
+    </div>
+    <button type="button" class="btn btn-primary btn-sm" id="btnNovoTreino">
         + Novo Treino
-    </a>
+    </button>
 </div>
 
 {% if treinos %}
@@ -15,53 +28,76 @@
     <table class="table table-striped table-hover align-middle">
         <thead class="table-dark">
             <tr>
-                <th style="width: 40px;"></th>
+                <th style="width: 36px;"></th>
                 <th>ID</th>
                 <th>Data</th>
                 <th>Aluno</th>
-                <th>Observações</th>
-                <th style="width: 240px;">Ações</th>
+                <th>Resumo</th>
+                <th>Observacoes</th>
+                <th style="width: 240px;">Acoes</th>
             </tr>
         </thead>
         <tbody>
         {% for t in treinos %}
+            {% set resumo = exercicios_resumo.get(t.id, {"total": 0, "grupos": []}) %}
             <tr
               class="treino-row"
               role="button"
-              data-bs-toggle="collapse"
-              data-bs-target="#treino-exs-{{ t.id }}"
-              aria-expanded="false"
-              aria-controls="treino-exs-{{ t.id }}"
+              data-collapse-target="treino-exs-{{ t.id }}"
             >
                 <td class="text-center align-middle">
                     <span class="caret-icon" data-collapse-icon="{{ t.id }}">&#9656;</span>
                 </td>
-                <td>{{ t.id }}</td>
+                <td class="fw-semibold">{{ t.id }}</td>
                 <td>{{ t.data }}</td>
                 <td>{{ t.aluno_nome }} (ID {{ t.aluno_id }})</td>
+                <td>
+                    <div class="d-flex flex-wrap align-items-center gap-2 table-sm-badges">
+                        <span class="badge bg-success-subtle text-success-emphasis border border-success-subtle">
+                            {{ resumo.total }} exercicio{{ resumo.total != 1 and 's' or '' }}
+                        </span>
+                        {% for grupo_nome, nomes in resumo.grupos[:3] %}
+                            <span class="badge bg-primary-subtle text-primary-emphasis border border-primary-subtle">
+                                {{ grupo_nome }} &#x2022; {{ nomes|length }}
+                            </span>
+                        {% endfor %}
+                        {% if resumo.grupos|length > 3 %}
+                            <span class="badge bg-secondary-subtle text-secondary-emphasis border border-secondary-subtle">
+                                +{{ resumo.grupos|length - 3 }} grupos
+                            </span>
+                        {% endif %}
+                        {% if resumo.total == 0 %}
+                            <span class="text-muted small">Sem exercicios</span>
+                        {% endif %}
+                    </div>
+                </td>
                 <td class="text-truncate" style="max-width: 300px;">
                     {{ t.observacoes or "-" }}
                 </td>
-                <td>
+                <td data-prevent-toggle="true">
                     <div class="d-flex flex-wrap gap-1">
                         <a
                           href="/web/treinos/{{ t.id }}"
                           class="btn btn-sm btn-outline-success"
-                          title="Abrir treino para gerenciar exercícios"
+                          title="Abrir treino para gerenciar exercicios"
                         >
                             Abrir
                         </a>
                         <a
-                          href="/web/treinos/{{ t.id }}/editar"
-                          class="btn btn-sm btn-outline-primary"
-                          title="Editar data/observações do treino"
+                          href="#"
+                          class="btn btn-sm btn-outline-primary btn-editar-treino"
+                          title="Editar data/observacoes do treino"
+                          data-treino-id="{{ t.id }}"
+                          data-aluno-id="{{ t.aluno_id }}"
+                          data-data="{{ t.data }}"
+                          data-observacoes="{{ t.observacoes }}"
                         >
                             Editar
                         </a>
                         <form
                           method="post"
                           action="/web/treinos/{{ t.id }}/deletar"
-                          onsubmit="return confirm('Tem certeza que deseja excluir este treino? Esta ação também apagará os exercícios vinculados.');"
+                          onsubmit="return confirm('Tem certeza que deseja excluir este treino? Esta acao tambem apagara os exercicios vinculados.');"
                         >
                             <button type="submit" class="btn btn-sm btn-outline-danger">
                                 Excluir
@@ -71,7 +107,7 @@
                 </td>
             </tr>
             <tr>
-                <td colspan="6" class="p-0 border-0">
+                <td colspan="7" class="p-0 border-0">
                     <div class="collapse" id="treino-exs-{{ t.id }}">
                         <div class="p-3">
                             {% set grupos = exercicios_por_treino.get(t.id, {}) %}
@@ -80,7 +116,7 @@
                                     <thead class="table-secondary">
                                         <tr>
                                             <th style="width: 180px;">Grupo muscular</th>
-                                            <th>Exercícios</th>
+                                            <th>Exercicios</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -88,7 +124,7 @@
                                         <tr>
                                             <td class="fw-semibold">{{ grupo }}</td>
                                             <td>
-                                                <div class="d-flex flex-wrap gap-2">
+                                                <div class="d-flex flex-wrap gap-2 table-sm-badges">
                                                     {% for nome in nomes %}
                                                         <span class="badge bg-primary-subtle text-primary-emphasis border border-primary-subtle">
                                                             {{ nome }}
@@ -102,7 +138,7 @@
                                 </table>
                             {% else %}
                                 <div class="text-muted small">
-                                    Nenhum exercício cadastrado neste treino.
+                                    Nenhum exercicio cadastrado neste treino.
                                 </div>
                             {% endif %}
                         </div>
@@ -116,34 +152,161 @@
 {% else %}
 <div class="alert alert-info">
     Nenhum treino cadastrado ainda.
-    <a href="/web/treinos/novo" class="alert-link">Criar primeiro treino</a>.
+    <button type="button" class="btn btn-link alert-link p-0 align-baseline" id="btnNovoTreinoEmpty">Criar primeiro treino</button>.
 </div>
 {% endif %}
+
+<!-- Modal novo treino -->
+<div class="modal fade" id="modalNovoTreino" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Novo treino</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+      </div>
+      <form id="formNovoTreino" method="post" action="/web/treinos/novo">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label" for="novoAlunoId">Aluno</label>
+            <select class="form-select" name="aluno_id" id="novoAlunoId" required>
+              {% for aluno in alunos_lista %}
+                <option value="{{ aluno.id }}">{{ aluno.nome }} (ID {{ aluno.id }})</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label" for="novoDataTreino">Data</label>
+            <input type="date" class="form-control" name="data" id="novoDataTreino" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label" for="novoObsTreino">Observacoes</label>
+            <textarea class="form-control" name="observacoes" id="novoObsTreino" rows="3" placeholder="Observacoes do treino"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Salvar e abrir treino</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal editar treino inline -->
+<div class="modal fade" id="modalEditarTreino" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Editar treino</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+      </div>
+      <form id="formEditarTreino" method="post">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label" for="modalAlunoId">Aluno</label>
+            <select class="form-select" name="aluno_id" id="modalAlunoId" required>
+              {% for aluno in alunos_lista %}
+                <option value="{{ aluno.id }}">{{ aluno.nome }} (ID {{ aluno.id }})</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label" for="modalData">Data</label>
+            <input type="date" class="form-control" name="data" id="modalData" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label" for="modalObservacoes">Observacoes</label>
+            <textarea class="form-control" name="observacoes" id="modalObservacoes" rows="3" placeholder="Observacoes do treino"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
 {{ super() }}
 <script>
-  // Toggle caret icons on collapse show/hide
   document.addEventListener('DOMContentLoaded', function () {
+    // Novo treino modal
+    var modalNovoTreino = document.getElementById('modalNovoTreino');
+    function openNovoTreinoModal() {
+      var form = document.getElementById('formNovoTreino');
+      form.reset();
+      var today = new Date().toISOString().slice(0,10);
+      var dataInput = document.getElementById('novoDataTreino');
+      if (dataInput) dataInput.value = today;
+      var bsModal = bootstrap.Modal.getOrCreateInstance(modalNovoTreino);
+      bsModal.show();
+    }
+    var btnNovoTreino = document.getElementById('btnNovoTreino');
+    if (btnNovoTreino) btnNovoTreino.addEventListener('click', function(ev){ ev.stopPropagation(); openNovoTreinoModal(); });
+    var btnNovoTreinoEmpty = document.getElementById('btnNovoTreinoEmpty');
+    if (btnNovoTreinoEmpty) btnNovoTreinoEmpty.addEventListener('click', function(ev){ ev.stopPropagation(); openNovoTreinoModal(); });
+
     var collapses = document.querySelectorAll('.table .collapse');
     collapses.forEach(function (col) {
       col.addEventListener('show.bs.collapse', function () {
         var id = col.id.replace('treino-exs-', '');
-        var icon = document.querySelector('[data-collapse-icon="' + id + '"]');
-        if (icon) icon.innerHTML = '&#9662;'; // down caret
+        var icon = document.querySelector('[data-collapse-icon=\"' + id + '\"]');
+        if (icon) icon.classList.add('caret-open');
       });
       col.addEventListener('hide.bs.collapse', function () {
         var id = col.id.replace('treino-exs-', '');
-        var icon = document.querySelector('[data-collapse-icon="' + id + '"]');
-        if (icon) icon.innerHTML = '&#9656;'; // right caret
+        var icon = document.querySelector('[data-collapse-icon=\"' + id + '\"]');
+        if (icon) icon.classList.remove('caret-open');
       });
     });
 
-    // Prevent clicks on action buttons/links from toggling the collapse via the row
-    document.querySelectorAll('.treino-row a, .treino-row button').forEach(function(el) {
-      el.addEventListener('click', function(ev) {
+    // Clique na linha (fora da area de acoes) para toggle manual
+    document.querySelectorAll('.treino-row').forEach(function(row) {
+      row.addEventListener('click', function(ev) {
+        if (ev.target.closest('[data-prevent-toggle="true"]')) return;
+        var targetId = row.getAttribute('data-collapse-target');
+        var col = document.getElementById(targetId);
+        if (!col) return;
+        var bsCol = bootstrap.Collapse.getOrCreateInstance(col, { toggle: false });
+        bsCol.toggle();
+      });
+    });
+
+    // Impede propagacao nos elementos de acao
+    var stopSelectors = ['.treino-row a', '.treino-row button', '.treino-row form'];
+    stopSelectors.forEach(function(sel) {
+      document.querySelectorAll(sel).forEach(function(el) {
+        ['click','mousedown'].forEach(function(evt){
+          el.addEventListener(evt, function(ev) { ev.stopPropagation(); });
+        });
+      });
+    });
+
+    // Modal de edicao inline
+    var modalEditar = document.getElementById('modalEditarTreino');
+    var formEditar = document.getElementById('formEditarTreino');
+    var alunoInput = document.getElementById('modalAlunoId');
+    var dataInput = document.getElementById('modalData');
+    var obsInput = document.getElementById('modalObservacoes');
+    document.querySelectorAll('.btn-editar-treino').forEach(function(btn) {
+      btn.addEventListener('click', function(ev) {
+        ev.preventDefault();
         ev.stopPropagation();
+        var treinoId = btn.getAttribute('data-treino-id');
+        var alunoId = btn.getAttribute('data-aluno-id');
+        var data = btn.getAttribute('data-data');
+        var obs = btn.getAttribute('data-observacoes') || '';
+
+        formEditar.setAttribute('action', '/web/treinos/' + treinoId + '/editar');
+        alunoInput.value = alunoId;
+        dataInput.value = data;
+        obsInput.value = obs;
+
+        var modal = bootstrap.Modal.getOrCreateInstance(modalEditar);
+        modal.show();
       });
     });
   });

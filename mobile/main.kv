@@ -19,31 +19,38 @@
                 text_color: 0, 0, 0, 1
         MDBoxLayout:
             orientation: "vertical"
-            padding: dp(12)
-            spacing: dp(2)
+            padding: dp(8)
+            spacing: dp(1)
             MDLabel:
                 text: "Alunos sem treino hoje"
                 theme_text_color: "Custom"
                 text_color: 0, 0, 0, 1
+                radius: [25, 0, 0, 0]
+                md_bg_color: "yellow"
                 font_style: "Caption"
+                size_hint_y: None
+                height: self.texture_size[1]
             ScrollView:
                 MDList:
                     id: dash_sem_treino
         MDBoxLayout:
             orientation: "vertical"
-            padding: dp(12)
-            spacing: dp(2)
+            padding: dp(8)
+            spacing: dp(1)
             MDLabel:
                 text: "Treinos do dia"
                 theme_text_color: "Custom"
                 text_color: 0, 0, 0, 1
+                md_bg_color:"green"
                 font_style: "Caption"
+                size_hint_y: None
+                height: self.texture_size[1]
             ScrollView:
                 MDList:
                     id: dash_treinos
         MDBoxLayout:
             adaptive_height: True
-            padding: dp(12)
+            # padding: dp(12)
             Widget:
             MDFloatingActionButton:
                 icon: "microphone"

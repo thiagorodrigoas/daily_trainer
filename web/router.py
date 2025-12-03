@@ -67,7 +67,7 @@ def web_home(request: Request, cursor=Depends(get_db_cursor)):
     # Alunos sem treino hoje (sem registro na data)
     cursor.execute(
         """
-        SELECT id, nome, turma
+        SELECT id, nome, apelido, turma
         FROM alunos a
         WHERE NOT EXISTS (
             SELECT 1 FROM treinos t
@@ -79,9 +79,11 @@ def web_home(request: Request, cursor=Depends(get_db_cursor)):
     )
     rows = cursor.fetchall()
     alunos_sem_treino = {}
-    for rid, nome, turma in rows:
+    for rid, nome, apelido, turma in rows:
         turma_key = turma or "Sem turma"
-        alunos_sem_treino.setdefault(turma_key, []).append({"id": rid, "nome": nome})
+        alunos_sem_treino.setdefault(turma_key, []).append(
+            {"id": rid, "nome": nome, "apelido": apelido}
+        )
 
     # Alunos que treinaram hoje com grupos musculares
     cursor.execute(
@@ -89,6 +91,7 @@ def web_home(request: Request, cursor=Depends(get_db_cursor)):
         SELECT
             a.id,
             a.nome,
+            a.apelido,
             COALESCE(a.turma, 'Sem turma') AS turma,
             COALESCE(e.grupo_muscular, 'Sem grupo') AS grupo
         FROM treinos t
@@ -102,11 +105,11 @@ def web_home(request: Request, cursor=Depends(get_db_cursor)):
     )
     rows = cursor.fetchall()
     treinos_do_dia = {}
-    for aluno_id, nome, turma, grupo in rows:
+    for aluno_id, nome, apelido, turma, grupo in rows:
         turma_key = turma or "Sem turma"
         turma_bucket = treinos_do_dia.setdefault(turma_key, {})
         aluno_bucket = turma_bucket.setdefault(
-            aluno_id, {"nome": nome, "grupos": set()}
+            aluno_id, {"nome": nome,"apelido": apelido, "grupos": set()}
         )
         if grupo:
             aluno_bucket["grupos"].add(grupo)
@@ -230,6 +233,7 @@ def web_novo_aluno(request: Request):
 def web_criar_aluno(
     request: Request,
     nome: str = Form(...),
+    apelido: str = Form(...),
     genero: str = Form(...),
     telefone: str = Form(""),
     turma: str = Form(""),
@@ -242,6 +246,7 @@ def web_criar_aluno(
     aluno = Aluno(
         id=None,
         nome=nome,
+        apelido=apelido,
         genero=genero,
         telefone=telefone or None,
         turma=turma or None,
@@ -277,6 +282,7 @@ def web_atualizar_aluno(
     request: Request,
     aluno_id: int,
     nome: str = Form(...),
+    apelido: str = Form(...),
     genero: str = Form(...),
     telefone: str = Form(""),
     turma: str = Form(""),
@@ -289,6 +295,7 @@ def web_atualizar_aluno(
     aluno = Aluno(
         id=aluno_id,
         nome=nome,
+        apelido=apelido,
         genero=genero,
         telefone=telefone or None,
         turma=turma or None,
@@ -381,6 +388,13 @@ def web_novo_treino(
     Exibe o formulário para cadastrar um novo treino (sessão do dia).
     """
     alunos = list_alunos(cursor)
+    aluno_prefill = request.query_params.get("aluno_id")
+    try:
+        aluno_prefill = int(aluno_prefill) if aluno_prefill is not None else None
+    except ValueError:
+        aluno_prefill = None
+    data_prefill = request.query_params.get("data")
+    obs_prefill = request.query_params.get("observacoes")
 
     context = {
         "request": request,
@@ -388,6 +402,9 @@ def web_novo_treino(
         "modo": "novo",
         "treino": None,
         "alunos": alunos,
+        "aluno_prefill": aluno_prefill,
+        "data_prefill": data_prefill,
+        "obs_prefill": obs_prefill,
         "action_url": "/web/treinos/novo",
     }
     return templates.TemplateResponse("treinos/form.html", context)
@@ -414,6 +431,7 @@ def web_criar_treino(
     )
 
     novo = create_treino(cursor, treino)
+
     return RedirectResponse(url=f"/web/treinos/{novo.id}", status_code=303)
 
 @router.get("/treinos/{treino_id}", response_class=HTMLResponse)
@@ -451,8 +469,6 @@ def web_detalhe_treino(
         "aluno_nome": row[4],
         "aluno_genero": row[5],
     }
-
-
 
 
     # Exercícios do treino (com info do catálogo)
@@ -593,6 +609,9 @@ def web_editar_treino(
         "modo": "editar",
         "treino": treino,
         "alunos": alunos,
+        "aluno_prefill": None,
+        "data_prefill": None,
+        "obs_prefill": None,
         "action_url": f"/web/treinos/{treino.id}/editar",
     }
     return templates.TemplateResponse("treinos/form.html", context)
@@ -626,7 +645,7 @@ def web_atualizar_treino(
     )
     if cursor.fetchone() is None:
         return RedirectResponse(url="/web/treinos", status_code=303)
-    print('************************************************************************************************************')
+    
     print(treino)
     atualizado = update_treino(cursor, treino_id, treino)
     if not atualizado:

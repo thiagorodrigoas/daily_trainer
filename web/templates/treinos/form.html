@@ -33,7 +33,7 @@
                     </option>
                     {% for aluno in alunos %}
                         <option value="{{ aluno.id }}"
-                            {% if treino and aluno.id == treino.aluno_id %}selected{% endif %}
+                            {% if (treino and aluno.id == treino.aluno_id) or (not treino and aluno_prefill and aluno.id == aluno_prefill) %}selected{% endif %}
                         >
                             {{ aluno.nome }} (ID {{ aluno.id }})
                         </option>
@@ -49,7 +49,7 @@
                     id="data"
                     name="data"
                     required
-                    value="{% if treino %}{{ treino.data }}{% endif %}"
+                    value="{% if treino %}{{ treino.data }}{% elif data_prefill %}{{ data_prefill }}{% endif %}"
                 >
             </div>
 
@@ -61,7 +61,7 @@
                     name="observacoes"
                     rows="3"
                     placeholder="Ex: treino focado em bíceps e costas, foco em técnica..."
-                >{% if treino and treino.observacoes %}{{ treino.observacoes }}{% endif %}</textarea>
+                >{% if treino and treino.observacoes %}{{ treino.observacoes }}{% elif obs_prefill %}{{ obs_prefill }}{% endif %}</textarea>
             </div>
 
             <div class="d-flex justify-content-between">

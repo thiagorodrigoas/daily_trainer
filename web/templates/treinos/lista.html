@@ -249,6 +249,22 @@
     var btnNovoTreinoEmpty = document.getElementById('btnNovoTreinoEmpty');
     if (btnNovoTreinoEmpty) btnNovoTreinoEmpty.addEventListener('click', function(ev){ ev.stopPropagation(); openNovoTreinoModal(); });
 
+    // Leva para o form completo j? pr?-preenchido (evita treino vazio sem exerc?cios)
+    var formNovoTreino = document.getElementById('formNovoTreino');
+    if (formNovoTreino) {
+      formNovoTreino.addEventListener('submit', function(ev) {
+        ev.preventDefault();
+        var aluno = document.getElementById('novoAlunoId')?.value || '';
+        var data = document.getElementById('novoDataTreino')?.value || '';
+        var obs = document.getElementById('novoObsTreino')?.value || '';
+        var url = new URL('/web/treinos/novo', window.location.origin);
+        if (aluno) url.searchParams.set('aluno_id', aluno);
+        if (data) url.searchParams.set('data', data);
+        if (obs) url.searchParams.set('observacoes', obs);
+        window.location.href = url.toString();
+      });
+    }
+
     var collapses = document.querySelectorAll('.table .collapse');
     collapses.forEach(function (col) {
       col.addEventListener('show.bs.collapse', function () {

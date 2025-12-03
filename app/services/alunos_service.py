@@ -8,9 +8,9 @@ from app.models.aluno import Aluno
 def list_alunos(cursor) -> List[Aluno]:
     cursor.execute(
         """
-        SELECT id, nome, genero, telefone, turma, observacoes
+        SELECT id, nome, apelido, genero, telefone, turma, observacoes
         FROM alunos
-        ORDER BY nome;
+        ORDER BY turma, nome;
         """
     )
     rows = cursor.fetchall()
@@ -18,10 +18,11 @@ def list_alunos(cursor) -> List[Aluno]:
         Aluno(
             id=row[0],
             nome=row[1],
-            genero=row[2],
-            telefone=row[3],
-            turma=row[4],
-            observacoes=row[5],
+            apelido=row[2],
+            genero=row[3],
+            telefone=row[4],
+            turma=row[5],
+            observacoes=row[6],
         )
         for row in rows
     ]
@@ -30,7 +31,7 @@ def list_alunos(cursor) -> List[Aluno]:
 def get_aluno(cursor, aluno_id: int) -> Optional[Aluno]:
     cursor.execute(
         """
-        SELECT id, nome, genero, telefone, turma, observacoes
+        SELECT id, nome, apelido, genero, telefone, turma, observacoes
         FROM alunos
         WHERE id = ?;
         """,
@@ -43,21 +44,22 @@ def get_aluno(cursor, aluno_id: int) -> Optional[Aluno]:
     return Aluno(
         id=row[0],
         nome=row[1],
-        genero=row[2],
-        telefone=row[3],
-        turma=row[4],
-        observacoes=row[5],
+        apelido=row[2],
+        genero=row[3],
+        telefone=row[4],
+        turma=row[5],
+        observacoes=row[6],
     )
 
 
 def create_aluno(cursor, aluno: Aluno) -> Aluno:
     cursor.execute(
         """
-        INSERT INTO alunos (id, nome, genero, telefone, turma, observacoes)
-        VALUES (nextval('alunos_seq'), ?, ?, ?, ?, ?)
+        INSERT INTO alunos (id, nome, apelido, genero, telefone, turma, observacoes)
+        VALUES (nextval('alunos_seq'), ?, ?, ?, ?, ?, ?)
         RETURNING id;
         """,
-        [aluno.nome, aluno.genero, aluno.telefone, aluno.turma, aluno.observacoes],
+        [aluno.nome, aluno.apelido, aluno.genero, aluno.telefone, aluno.turma, aluno.observacoes],
     )
     new_id = cursor.fetchone()[0]
     return Aluno(
@@ -78,11 +80,12 @@ def update_aluno(cursor, aluno_id: int, aluno: Aluno) -> Optional[Aluno]:
     cursor.execute(
         """
         UPDATE alunos
-        SET nome = ?, genero = ?, telefone = ?, turma = ?, observacoes = ?
+        SET nome = ?, apelido = ?, genero = ?, telefone = ?, turma = ?, observacoes = ?
         WHERE id = ?;
         """,
         [
             aluno.nome,
+            aluno.apelido,
             aluno.genero,
             aluno.telefone,
             aluno.turma,

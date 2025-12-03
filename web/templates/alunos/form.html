@@ -30,6 +30,15 @@
                     required
                     value="{{ aluno.nome if aluno else '' }}"
                 >
+                <label for="apelido" class="form-label">Apelido</label>
+                <input
+                    type="text"
+                    class="form-control"
+                    id="apelido"
+                    name="apelido"
+                    required
+                    value="{{ aluno.apelido if aluno else '' }}"
+                >
             </div>
 
             <div class="mb-3">

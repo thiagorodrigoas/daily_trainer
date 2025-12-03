@@ -29,9 +29,11 @@
                                       type="button"
                                       class="badge bg-light text-dark border fw-semibold"
                                       data-create-treino="{{ a.id }}"
+                                      data-aluno-nome="{{ a.nome }}"
+                                      data-aluno-apelido="{{ a.apelido }}"
                                       title="Criar treino de hoje para {{ a.nome }}"
                                     >
-                                        {{ a.nome }} (ID {{ a.id }})
+                                        {{ a.nome }}{% if a.apelido %} ({{ a.apelido }}){% endif %}
                                     </button>
                                 {% endfor %}
                             </div>
@@ -96,37 +98,68 @@
         </div>
     </div>
 </div>
+
+<!-- Modal novo treino (painel) -->
+<div class="modal fade" id="modalNovoTreinoPainel" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Novo treino</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+      </div>
+      <form id="formNovoTreinoPainel" method="post" action="/web/treinos/novo">
+        <div class="modal-body">
+          <input type="hidden" id="novoAlunoIdPainel" name="aluno_id">
+          <div class="mb-3">
+            <label class="form-label">Aluno</label>
+            <input type="text" class="form-control" id="novoAlunoNomePainel" disabled>
+          </div>
+          <div class="mb-3">
+            <label class="form-label" for="novoDataPainel">Data</label>
+            <input type="date" class="form-control" id="novoDataPainel" name="data" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label" for="novoObsPainel">Observações</label>
+            <textarea class="form-control" id="novoObsPainel" name="observacoes" rows="3" placeholder="Observações do treino (opcional)"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Criar e abrir treino</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
 {{ super() }}
 <script>
   document.addEventListener('DOMContentLoaded', function () {
-    // Criar treino de hoje ao clicar no badge do aluno
+    var modalNovoTreino = document.getElementById('modalNovoTreinoPainel');
+    var formNovo = document.getElementById('formNovoTreinoPainel');
+    var alunoIdInput = document.getElementById('novoAlunoIdPainel');
+    var alunoNomeInput = document.getElementById('novoAlunoNomePainel');
+    var dataInput = document.getElementById('novoDataPainel');
+    var obsInput = document.getElementById('novoObsPainel');
+
+    function abrirModalComAluno(btn) {
+      var alunoId = btn.getAttribute('data-create-treino');
+      var nome = btn.getAttribute('data-aluno-nome') || '';
+      var apelido = btn.getAttribute('data-aluno-apelido') || '';
+      if (!alunoId) return;
+      alunoIdInput.value = alunoId;
+      alunoNomeInput.value = apelido ? `${nome} (${apelido})` : nome;
+      if (dataInput) dataInput.value = '{{ hoje }}';
+      if (obsInput) obsInput.value = '';
+      var bsModal = bootstrap.Modal.getOrCreateInstance(modalNovoTreino);
+      bsModal.show();
+    }
+
     document.querySelectorAll('[data-create-treino]').forEach(function(btn){
       btn.addEventListener('click', function(){
-        var alunoId = btn.getAttribute('data-create-treino');
-        if (!alunoId) return;
-        var form = document.createElement('form');
-        form.method = 'post';
-        form.action = '/web/treinos/novo';
-        var alunoInput = document.createElement('input');
-        alunoInput.type = 'hidden';
-        alunoInput.name = 'aluno_id';
-        alunoInput.value = alunoId;
-        form.appendChild(alunoInput);
-        var dataInput = document.createElement('input');
-        dataInput.type = 'hidden';
-        dataInput.name = 'data';
-        dataInput.value = '{{ hoje }}';
-        form.appendChild(dataInput);
-        var obsInput = document.createElement('input');
-        obsInput.type = 'hidden';
-        obsInput.name = 'observacoes';
-        obsInput.value = '';
-        form.appendChild(obsInput);
-        document.body.appendChild(form);
-        form.submit();
+        abrirModalComAluno(btn);
       });
     });
   });

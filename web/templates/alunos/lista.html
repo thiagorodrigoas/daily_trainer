@@ -31,7 +31,7 @@
             <tr class="aluno-row" role="button" data-collapse-target="aluno-{{ aluno.id }}">
                 <td class="text-center align-middle"><span class="caret-icon">&#9656;</span></td>
                 <td class="fw-semibold">{{ aluno.id }}</td>
-                <td>{{ aluno.nome }}</td>
+                <td>{{ aluno.nome }}{% if aluno.apelido %} ({{ aluno.apelido }}){% endif %}</td>
                 <td>{{ aluno.genero }}</td>
                 <td>{{ aluno.telefone or "-" }}</td>
                 <td>{{ aluno.turma or "-" }}</td>
@@ -45,6 +45,7 @@
                           class="btn btn-sm btn-outline-primary btn-editar-aluno"
                           data-id="{{ aluno.id }}"
                           data-nome="{{ aluno.nome }}"
+                          data-apelido="{{ aluno.apelido|default('', true) }}"
                           data-genero="{{ aluno.genero }}"
                           data-telefone="{{ aluno.telefone }}"
                           data-turma="{{ aluno.turma }}"
@@ -134,6 +135,8 @@
           <div class="mb-3">
             <label class="form-label" for="modalNomeAluno">Nome</label>
             <input type="text" class="form-control" id="modalNomeAluno" name="nome" required>
+            <label class="form-label" for="modalApelidoAluno">Apelido</label>
+            <input type="text" class="form-control" id="modalApelidoAluno" name="apelido" required>
           </div>
           <div class="mb-3">
             <label class="form-label" for="modalGeneroAluno">Genero</label>
@@ -178,6 +181,10 @@
           <div class="mb-3">
             <label class="form-label" for="novoNomeAluno">Nome</label>
             <input type="text" class="form-control" id="novoNomeAluno" name="nome" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label" for="novoApelidoAluno">Apelido</label>
+            <input type="text" class="form-control" id="novoApelidoAluno" name="apelido" required>
           </div>
           <div class="mb-3">
             <label class="form-label" for="novoGeneroAluno">Genero</label>
@@ -228,6 +235,7 @@
     var modal = document.getElementById('modalEditarAluno');
     var form = document.getElementById('formEditarAluno');
     var nome = document.getElementById('modalNomeAluno');
+    var apelido = document.getElementById('modalApelidoAluno');
     var genero = document.getElementById('modalGeneroAluno');
     var telefone = document.getElementById('modalTelefoneAluno');
     var turma = document.getElementById('modalTurmaAluno');
@@ -240,6 +248,7 @@
         var id = btn.getAttribute('data-id');
         idField.value = id;
         nome.value = btn.getAttribute('data-nome') || '';
+        apelido.value = btn.getAttribute('data-apelido') || '';
         genero.value = btn.getAttribute('data-genero') || 'unissex';
         telefone.value = btn.getAttribute('data-telefone') || '';
         turma.value = btn.getAttribute('data-turma') || '';

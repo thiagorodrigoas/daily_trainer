@@ -34,6 +34,7 @@ def init_db():
         CREATE TABLE IF NOT EXISTS alunos (
             id INTEGER PRIMARY KEY,
             nome TEXT NOT NULL,
+            apelido TEXT,
             genero TEXT NOT NULL,
             telefone TEXT,
             turma TEXT,
